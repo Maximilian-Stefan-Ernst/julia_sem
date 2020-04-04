@@ -1,32 +1,21 @@
 # function to fit SEM and obtain a big fitted object
-function sem_fit!(model)
-      prepare_model!(model)
+function sem_fit!(sem::sem_model)
+      prepare_model!(sem)
       # fit model
-      result = opt_sem(model)
+      result = opt_sem(model(sem))
       # store obtained solution in model
-      model.par = Optim.minimizer(result)
-      model.opt_result = result
+      sem.par = Optim.minimizer(result)
+      sem.opt_result = result
       #update implied covariance
-      sem_imp_cov!(model)
+      sem_imp_cov!(sem)
 end
 
-function prepare_model!(model)
-      if isnothing(model.obs_cov)
-            sem_obs_cov!(model)
+function prepare_model!(sem)
+      if isnothing(sem.obs_cov)
+            sem_obs_cov!(sem)
       end
-      if isnothing(model.obs_mean)
-            sem_obs_mean!(model)
-      end
-      if model.mstruc
-            sem_est!(model, ML_mean)
-      elseif !model.mstruc
-            sem_est!(model, ML)
-      end
-      if isnothing(model.reg)
-      elseif model.reg == "lasso"
-            sem_est!(model, ML_lasso)
-      elseif model.reg == "ridge"
-            sem_est!(model, ML_ridge)
+      if isnothing(sem.obs_mean)
+            sem_obs_mean!(sem)
       end
 end
 
@@ -75,11 +64,11 @@ function sem_obs_cov!(model)
 end
 
 function sem_imp_cov!(model)
-      model.imp_cov = imp_cov(model.ram, model.par)
+      model.imp_cov = imp_cov(model.ram(model.par))
 end
 
 function sem_obs_mean!(model)
-      model.obs_mean = mean(model.data, dims = 1)
+      model.obs_mean = vec(mean(model.data, dims = 1))
 end
 
 

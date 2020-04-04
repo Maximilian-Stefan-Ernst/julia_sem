@@ -2,7 +2,7 @@
 function opt_sem(model)
       if model.opt == "LBFGS"
             objective = parameters ->
-                  model.est(parameters, model)
+                  ML(model.ram(parameters), model)
             result =
                   optimize(objective, model.par, LBFGS(),
                         autodiff = :forward)
@@ -22,3 +22,8 @@ function opt_sem(model)
             error("Unknown Optimizer")
       end
 end
+
+
+lamb = x -> sqrt(sum(x, dims = 2))
+
+lamb([5.0 5.0])

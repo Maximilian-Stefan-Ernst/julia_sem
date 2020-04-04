@@ -1,25 +1,22 @@
 mutable struct model{
-        RAM <: Function,
-        DATA <: Union{Matrix{Float64}, Nothing},
-        PAR <: Union{Array{Float64, 1}, Nothing},
-        MSTRUC <: Union{Bool, Nothing},
-        LOGL <: Union{Float64, Nothing},
-        OPT <: Union{String, Nothing},
-        EST <: Union{Function, Nothing},
-        OBS_COV <: Union{Matrix{Float64}, Nothing},
-        IMP_COV <: Union{Matrix{Float64}, Nothing},
-        OBS_MEAN <: Union{Array{Float64, 2}, Nothing},
-        OPT_RESULT <: Any,
-        SE <: Union{Array{Float64, 2}, Nothing},
-        Z <: Union{Array{Float64, 2}, Nothing},
-        P <: Union{Array{Float64, 2}, Nothing},
-        LASSO <: Union{Array{Bool,2}, Nothing},
-        LASSO_PEN <: Union{Float64, Nothing},
-        RIDGE <: Union{Array{Bool,2}, Nothing},
-        RIDGE_PEN <: Union{Float64, Nothing}}
+        RAM,
+        PAR,
+        DATA,
+        MSTRUC,
+        LOGL,
+        OPT,
+        EST,
+        OBS_COV,
+        IMP_COV,
+        OBS_MEAN,
+        OPT_RESULT,
+        SE,
+        Z,
+        P,
+        REG}
     ram::RAM
-    data::DATA
     par::PAR
+    data::DATA
     mstruc::MSTRUC
     logl::LOGL
     opt::OPT
@@ -31,12 +28,9 @@ mutable struct model{
     se::SE
     z::Z
     p::P
-    lasso::LASSO
-    lasso_pen::LASSO_PEN
-    ridge::RIDGE
-    ridge_pen::RIDGE_PEN
-    model{RAM, DATA, PAR, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(
-            ram, data, par,
+    reg::REG
+    model{RAM, PAR, DATA, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, REG}(
+            ram, par, data,
             mstruc,
             logl,
             opt,
@@ -48,29 +42,23 @@ mutable struct model{
             se,
             z,
             p,
-            lasso,
-            lasso_pen,
-            ridge,
-            ridge_pen) where {
-                    RAM <: Function,
-                    DATA <: Union{Matrix{Float64}, Nothing},
-                    PAR <: Union{Array{Float64, 1}, Nothing},
-                    MSTRUC <: Union{Bool, Nothing},
-                    LOGL <: Union{Float64, Nothing},
-                    OPT <: Union{String, Nothing},
-                    EST <: Union{Function, Nothing},
-                    OBS_COV <: Union{Matrix{Float64}, Nothing},
-                    IMP_COV <: Union{Matrix{Float64}, Nothing},
-                    OBS_MEAN <: Union{Array{Float64, 2}, Nothing},
-                    OPT_RESULT <: Any,
-                    SE <: Union{Array{Float64, 2}, Nothing},
-                    Z <: Union{Array{Float64, 2}, Nothing},
-                    P <: Union{Array{Float64, 2}, Nothing},
-                    LASSO <: Union{Array{Bool,2}, Nothing},
-                    LASSO_PEN <: Union{Float64, Nothing},
-                    RIDGE <: Union{Array{Bool,2}, Nothing},
-                    RIDGE_PEN <: Union{Float64, Nothing}} =
-    new(ram, data, par,
+            reg) where {
+            RAM,
+            PAR,
+            DATA,
+            MSTRUC,
+            LOGL,
+            OPT,
+            EST,
+            OBS_COV,
+            IMP_COV,
+            OBS_MEAN,
+            OPT_RESULT,
+            SE,
+            Z,
+            P,
+            REG} =
+    new(ram, par, data,
             mstruc,
             logl,
             opt,
@@ -82,13 +70,12 @@ mutable struct model{
             se,
             z,
             p,
-            lasso,
-            lasso_pen,
-            ridge,
-            ridge_pen)
+            reg)
 end
 
-model(ram::RAM, data::DATA, par::PAR;
+
+# second outer constructor for @set
+model(ram::RAM, par::PAR, data::DATA = nothing,
         mstruc::MSTRUC = false,
         logl::LOGL = nothing,
         opt::OPT = "LBFGS",
@@ -100,30 +87,24 @@ model(ram::RAM, data::DATA, par::PAR;
         se::SE = nothing,
         z::Z = nothing,
         p::P = nothing,
-        lasso::LASSO = nothing,
-        lasso_pen::LASSO_PEN = nothing,
-        ridge::RIDGE = nothing,
-        ridge_pen::RIDGE_PEN = nothing) where {
-                RAM <: Function,
-                DATA <: Union{Matrix{Float64}, Nothing},
-                PAR <: Union{Array{Float64, 1}, Nothing},
-                MSTRUC <: Union{Bool, Nothing},
-                LOGL <: Union{Float64, Nothing},
-                OPT <: Union{String, Nothing},
-                EST <: Union{Function, Nothing},
-                OBS_COV <: Union{Matrix{Float64}, Nothing},
-                IMP_COV <: Union{Matrix{Float64}, Nothing},
-                OBS_MEAN <: Union{Array{Float64, 2}, Nothing},
-                OPT_RESULT <: Any,
-                SE <: Union{Array{Float64, 2}, Nothing},
-                Z <: Union{Array{Float64, 2}, Nothing},
-                P <: Union{Array{Float64, 2}, Nothing},
-                LASSO <: Union{Array{Bool,2}, Nothing},
-                LASSO_PEN <: Union{Float64, Nothing},
-                RIDGE <: Union{Array{Bool,2}, Nothing},
-                RIDGE_PEN <: Union{Float64, Nothing}} =
-        model{RAM, DATA, PAR, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(
-                ram, data, par,
+        reg::REG = nothing) where {
+        RAM,
+        DATA,
+        PAR,
+        MSTRUC,
+        LOGL,
+        OPT,
+        EST,
+        OBS_COV,
+        IMP_COV,
+        OBS_MEAN,
+        OPT_RESULT,
+        SE,
+        Z,
+        P,
+        REG} =
+        model{RAM, PAR, DATA, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, REG}(
+                ram, par, data,
                 mstruc,
                 logl,
                 opt,
@@ -135,13 +116,89 @@ model(ram::RAM, data::DATA, par::PAR;
                 se,
                 z,
                 p,
-                lasso,
-                lasso_pen,
-                ridge,
-                ridge_pen)
+                reg)
+### untyped struct for user
 
-struct ram{T}
-        S::T
-        F::T
-        A::T
+mutable struct sem_model
+        ram
+        par
+        data
+        mstruc
+        logl
+        opt
+        est
+        obs_cov
+        imp_cov
+        obs_mean
+        opt_result
+        se
+        z
+        p
+        reg
 end
+
+sem_model(ram, par;
+        data = nothing,
+        mstruc = false,
+        logl = nothing,
+        opt = "LBFGS",
+        est = nothing,
+        obs_cov = nothing,
+        imp_cov = nothing,
+        obs_mean = nothing,
+        opt_result = nothing,
+        se = nothing,
+        z = nothing,
+        p = nothing,
+        reg = nothing) =
+        sem_model(ram, par,
+                data,
+                mstruc,
+                logl,
+                opt,
+                est,
+                obs_cov,
+                imp_cov,
+                obs_mean,
+                opt_result,
+                se,
+                z,
+                p,
+                reg)
+
+
+
+model(sem::sem_model) = model(sem.ram, sem.par,
+                        sem.data,
+                        sem.mstruc,
+                        sem.logl,
+                        sem.opt,
+                        sem.est,
+                        sem.obs_cov,
+                        sem.imp_cov,
+                        sem.obs_mean,
+                        sem.opt_result,
+                        sem.se,
+                        sem.z,
+                        sem.p,
+                        sem.reg)
+
+
+mutable struct reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}
+        lasso::LASSO
+        lasso_pen::LASSO_PEN
+        ridge::RIDGE
+        ridge_pen::RIDGE_PEN
+        reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(
+                lasso, lasso_pen, ridge, ridge_pen) where {
+                LASSO, LASSO_PEN, RIDGE, RIDGE_PEN} =
+        new(lasso, lasso_pen, ridge, ridge_pen)
+end
+
+
+reg(lasso::LASSO = nothing, lasso_pen::LASSO_PEN = nothing,
+        ridge::RIDGE = nothing, ridge_pen::RIDGE_PEN = nothing) where {
+        LASSO, LASSO_PEN, RIDGE, RIDGE_PEN} =
+        reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(
+                lasso, lasso_pen, ridge, ridge_pen
+                )

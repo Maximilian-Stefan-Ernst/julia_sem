@@ -1,12 +1,7 @@
 using sem, Test, Feather, BenchmarkTools, Distributions,
         Optim
 
-        #::Union{
-        #        Tuple{Array{Float64}, Array{Float64}, Array{Float64}},
-        #        Tuple{AbstractArray, AbstractArray, AbstractArray}}
-
-
-function holz_onef_mod(x)
+function holz_onef_mod(x)::Tuple{Any, Any, Any}
     S = [x[1] 0 0 0
         0 x[2] 0 0
         0 0 x[3] 0
@@ -53,15 +48,38 @@ holz_onef_dat = Feather.read("test/comparisons/holz_onef_dat.feather")
 holz_onef_par = Feather.read("test/comparisons/holz_onef_par.feather")
 
 mymod_lbfgs =
-    model(holz_onef_mod, holz_onef_dat,
-    [0.5, 0.5, 0.5, 0.5, 1.0, 1.0])
+    sem_model(holz_onef_mod,
+    [0.5, 0.5, 0.5, 0.5, 1.0, 1.0];
+    data = convert(Matrix{Float64}, holz_onef_dat))
+
+
+mymod_lbfgs =
+    sem_model(holz_onef_mod_mean,
+    [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 5.0, 1.0, -3.0];
+    data = convert(Matrix{Float64}, holz_onef_dat))
+
+
+sem_fit!(mymod_lbfgs)
+
+mymod_lbfgs
+
+mymod = model(mymod_lbfgs)
+
+objective = parameters ->
+        mymod_lbfgs.est(parameters, mymod)
+
+result = optimize(objective, mymod.par, LBFGS(),
+                autodiff = :forward)
+
+mymod_lbfgs
 
 ###
 
 @benchmark begin
     mymod_lbfgs =
-        model(holz_onef_mod, holz_onef_dat,
-        [0.5, 0.5, 0.5, 0.5, 1.0, 1.0])
+        sem_model(holz_onef_mod,
+        [0.5, 0.5, 0.5, 0.5, 1.0, 1.0];
+        data = convert(Matrix{Float64}, holz_onef_dat))
     sem_fit!(mymod_lbfgs)
 end
 
@@ -90,12 +108,41 @@ end
 
 ### type stability
 mymod_lbfgs =
-    model(holz_onef_mod,
-    convert(Matrix{Float64}, holz_onef_dat),
+    sem(holz_onef_mod,
+    convert(Matrix{Float64}, rand(100, 100)),
     [0.5, 0.5, 0.5, 0.5, 1.0, 1.0];
     obs_cov = Distributions.cov(convert(Matrix{Float64}, holz_onef_dat)),
-    obs_mean = mean(convert(Matrix{Float64}, holz_onef_dat), dims = 1),
-    est = sem.ML)
+    obs_mean = mean(convert(Matrix{Float64}, holz_onef_dat), dims = 1))
+
+setfield!(mymod_lbfgs, :logl, 5.0)
+
+mymod_lbfgs
+
+mymod_lbfgs = @set mymod_lbfgs.logl = 1.0
+
+const B = rand(30, 1000000)
+
+mymod_lbfgs = @set mymod_lbfgs.data = B
+
+f(mymod_lbfgs)
+
+function f(mymod_lbfgs)
+    mymod_lbfgs = @set mymod_lbfgs.logl = nothing
+end
+
+@benchmark my = mymod_lbfgs
+
+set(mymod_lbfgs, lens, rand(10, 10))
+
+mymod_lbfgs
+
+mymod_lbfgs = set(mymod_lbfgs, lens, nothing)
+
+@benchmark begin
+    f(mymod_lbfgs)
+end
+
+@benchmark setfield!(mymod_lbfgs, :data, B)
 
 function ML3(parameters::Union{Array{Float64}, AbstractArray}, model::model)
       obs_cov = model.obs_cov
@@ -108,7 +155,7 @@ end
 
 @code_warntype holz_onef_mod(ones(6))
 @code_warntype mymod_lbfgs.ram(ones(6))
-@code_warntype ML3(ones(6), mymod_lbfgs)
+@code_warntype ML3(ones(6), model(mymod_lbfgs))
 
 @benchmark begin
     mymod_lbfgs =

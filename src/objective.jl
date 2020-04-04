@@ -1,21 +1,27 @@
 # Maximum Likelihood Estimation
-function ML(parameters, model::model)
+
+function ML_wrap(parameters, model::model)
+      matrices = model.ram(parameters)
+      ML(matrices, model)
+end
+
+function ML(matrices::NTuple{3, Any}, model::model)
       obs_cov = model.obs_cov
       n_man = size(obs_cov, 1)
-      Cov_Exp = imp_cov(parameters, model)
+      Cov_Exp = imp_cov(matrices)
       F_ML = log(det(Cov_Exp)) + tr(obs_cov*inv(Cov_Exp)) - log(det(obs_cov)) - n_man
       return F_ML
 end
 
-function ML_mean(parameters, model)
+function ML(matrices::NTuple{4, Any}, model::model)
       obs_cov = model.obs_cov
       obs_mean = model.obs_mean
       n_man = size(obs_cov, 1)
-      matrices = model.ram(parameters)
-      Cov_Exp = imp_cov(model, parameters)
+      Cov_Exp = imp_cov(matrices)
+      F_ML = log(det(Cov_Exp)) + tr(obs_cov*inv(Cov_Exp)) - log(det(obs_cov)) - n_man
       Mean_Exp = matrices[2]*inv(I-matrices[3])*matrices[4]
-      F_ML = log(det(Cov_Exp)) + tr(obs_cov*inv(Cov_Exp)) +
-                  transpose(obs_mean - Mean_Exp)*transpose(Cov_Exp)*
+      F_ML = log(det(Cov_Exp)) + tr(inv(Cov_Exp)*obs_cov) +
+                  transpose(obs_mean - Mean_Exp)*inv(Cov_Exp)*
                         (obs_mean - Mean_Exp)
       return F_ML
 end
