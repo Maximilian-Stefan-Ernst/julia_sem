@@ -2,7 +2,7 @@ mutable struct model{
         RAM,
         PAR,
         DATA,
-        MSTRUC,
+        REG,
         LOGL,
         OPT,
         EST,
@@ -12,12 +12,11 @@ mutable struct model{
         OPT_RESULT,
         SE,
         Z,
-        P,
-        REG}
+        P}
     ram::RAM
     par::PAR
     data::DATA
-    mstruc::MSTRUC
+    reg::REG
     logl::LOGL
     opt::OPT
     est::EST
@@ -28,10 +27,9 @@ mutable struct model{
     se::SE
     z::Z
     p::P
-    reg::REG
-    model{RAM, PAR, DATA, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, REG}(
+    model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P}(
             ram, par, data,
-            mstruc,
+            reg,
             logl,
             opt,
             est,
@@ -41,12 +39,11 @@ mutable struct model{
             opt_result,
             se,
             z,
-            p,
-            reg) where {
+            p) where {
             RAM,
             PAR,
             DATA,
-            MSTRUC,
+            REG,
             LOGL,
             OPT,
             EST,
@@ -56,10 +53,9 @@ mutable struct model{
             OPT_RESULT,
             SE,
             Z,
-            P,
-            REG} =
+            P} =
     new(ram, par, data,
-            mstruc,
+            reg,
             logl,
             opt,
             est,
@@ -69,29 +65,27 @@ mutable struct model{
             opt_result,
             se,
             z,
-            p,
-            reg)
+            p)
 end
 
 
 # second outer constructor for @set
 model(ram::RAM, par::PAR, data::DATA = nothing,
-        mstruc::MSTRUC = false,
+        reg::REG = nothing,
         logl::LOGL = nothing,
         opt::OPT = "LBFGS",
-        est::EST = nothing,
+        est::EST = ML,
         obs_cov::OBS_COV = nothing,
         imp_cov::IMP_COV = nothing,
         obs_mean::OBS_MEAN = nothing,
         opt_result::OPT_RESULT = nothing,
         se::SE = nothing,
         z::Z = nothing,
-        p::P = nothing,
-        reg::REG = nothing) where {
+        p::P = nothing) where {
         RAM,
-        DATA,
         PAR,
-        MSTRUC,
+        DATA,
+        REG,
         LOGL,
         OPT,
         EST,
@@ -101,11 +95,10 @@ model(ram::RAM, par::PAR, data::DATA = nothing,
         OPT_RESULT,
         SE,
         Z,
-        P,
-        REG} =
-        model{RAM, PAR, DATA, MSTRUC, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P, REG}(
+        P} =
+        model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P}(
                 ram, par, data,
-                mstruc,
+                reg,
                 logl,
                 opt,
                 est,
@@ -115,15 +108,14 @@ model(ram::RAM, par::PAR, data::DATA = nothing,
                 opt_result,
                 se,
                 z,
-                p,
-                reg)
+                p)
 ### untyped struct for user
 
 mutable struct sem_model
         ram
         par
         data
-        mstruc
+        reg
         logl
         opt
         est
@@ -134,26 +126,24 @@ mutable struct sem_model
         se
         z
         p
-        reg
 end
 
 sem_model(ram, par;
         data = nothing,
-        mstruc = false,
+        reg = nothing,
         logl = nothing,
         opt = "LBFGS",
-        est = nothing,
+        est = ML,
         obs_cov = nothing,
         imp_cov = nothing,
         obs_mean = nothing,
         opt_result = nothing,
         se = nothing,
         z = nothing,
-        p = nothing,
-        reg = nothing) =
+        p = nothing) =
         sem_model(ram, par,
                 data,
-                mstruc,
+                reg,
                 logl,
                 opt,
                 est,
@@ -163,14 +153,13 @@ sem_model(ram, par;
                 opt_result,
                 se,
                 z,
-                p,
-                reg)
+                p)
 
 
 
 model(sem::sem_model) = model(sem.ram, sem.par,
                         sem.data,
-                        sem.mstruc,
+                        sem.reg,
                         sem.logl,
                         sem.opt,
                         sem.est,
@@ -180,8 +169,7 @@ model(sem::sem_model) = model(sem.ram, sem.par,
                         sem.opt_result,
                         sem.se,
                         sem.z,
-                        sem.p,
-                        sem.reg)
+                        sem.p)
 
 
 mutable struct reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}
@@ -196,7 +184,7 @@ mutable struct reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}
 end
 
 
-reg(lasso::LASSO = nothing, lasso_pen::LASSO_PEN = nothing,
+reg(;lasso::LASSO = nothing, lasso_pen::LASSO_PEN = nothing,
         ridge::RIDGE = nothing, ridge_pen::RIDGE_PEN = nothing) where {
         LASSO, LASSO_PEN, RIDGE, RIDGE_PEN} =
         reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(

@@ -2,7 +2,7 @@
 function opt_sem(model)
       if model.opt == "LBFGS"
             objective = parameters ->
-                  ML(model.ram(parameters), model)
+                  model.est(parameters, model.ram(parameters), model, model.reg)
             result =
                   optimize(objective, model.par, LBFGS(),
                         autodiff = :forward)
