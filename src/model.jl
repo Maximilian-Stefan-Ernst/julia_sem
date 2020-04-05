@@ -10,9 +10,7 @@ mutable struct model{
         IMP_COV,
         OBS_MEAN,
         OPT_RESULT,
-        SE,
-        Z,
-        P}
+        PAR_UNC}
     ram::RAM
     par::PAR
     data::DATA
@@ -24,10 +22,8 @@ mutable struct model{
     imp_cov::IMP_COV
     obs_mean::OBS_MEAN
     opt_result::OPT_RESULT
-    se::SE
-    z::Z
-    p::P
-    model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P}(
+    par_unc::PAR_UNC
+    model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, PAR_UNC}(
             ram, par, data,
             reg,
             logl,
@@ -37,9 +33,7 @@ mutable struct model{
             imp_cov,
             obs_mean,
             opt_result,
-            se,
-            z,
-            p) where {
+            par_unc) where {
             RAM,
             PAR,
             DATA,
@@ -51,9 +45,7 @@ mutable struct model{
             IMP_COV,
             OBS_MEAN,
             OPT_RESULT,
-            SE,
-            Z,
-            P} =
+            PAR_UNC} =
     new(ram, par, data,
             reg,
             logl,
@@ -63,9 +55,7 @@ mutable struct model{
             imp_cov,
             obs_mean,
             opt_result,
-            se,
-            z,
-            p)
+            par_unc)
 end
 
 
@@ -79,9 +69,7 @@ model(ram::RAM, par::PAR, data::DATA = nothing,
         imp_cov::IMP_COV = nothing,
         obs_mean::OBS_MEAN = nothing,
         opt_result::OPT_RESULT = nothing,
-        se::SE = nothing,
-        z::Z = nothing,
-        p::P = nothing) where {
+        par_unc::PAR_UNC = nothing) where {
         RAM,
         PAR,
         DATA,
@@ -93,10 +81,8 @@ model(ram::RAM, par::PAR, data::DATA = nothing,
         IMP_COV,
         OBS_MEAN,
         OPT_RESULT,
-        SE,
-        Z,
-        P} =
-        model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, SE, Z, P}(
+        PAR_UNC} =
+        model{RAM, PAR, DATA, REG, LOGL, OPT, EST, OBS_COV, IMP_COV, OBS_MEAN, OPT_RESULT, PAR_UNC}(
                 ram, par, data,
                 reg,
                 logl,
@@ -106,9 +92,7 @@ model(ram::RAM, par::PAR, data::DATA = nothing,
                 imp_cov,
                 obs_mean,
                 opt_result,
-                se,
-                z,
-                p)
+                par_unc)
 ### untyped struct for user
 
 mutable struct sem_model
@@ -123,9 +107,7 @@ mutable struct sem_model
         imp_cov
         obs_mean
         opt_result
-        se
-        z
-        p
+        par_unc
 end
 
 sem_model(ram, par;
@@ -138,9 +120,7 @@ sem_model(ram, par;
         imp_cov = nothing,
         obs_mean = nothing,
         opt_result = nothing,
-        se = nothing,
-        z = nothing,
-        p = nothing) =
+        par_unc = nothing) =
         sem_model(ram, par,
                 data,
                 reg,
@@ -151,9 +131,7 @@ sem_model(ram, par;
                 imp_cov,
                 obs_mean,
                 opt_result,
-                se,
-                z,
-                p)
+                par_unc)
 
 
 
@@ -167,9 +145,7 @@ model(sem::sem_model) = model(sem.ram, sem.par,
                         sem.imp_cov,
                         sem.obs_mean,
                         sem.opt_result,
-                        sem.se,
-                        sem.z,
-                        sem.p)
+                        sem.par_unc)
 
 
 mutable struct reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}
@@ -190,3 +166,10 @@ reg(;lasso::LASSO = nothing, lasso_pen::LASSO_PEN = nothing,
         reg{LASSO, LASSO_PEN, RIDGE, RIDGE_PEN}(
                 lasso, lasso_pen, ridge, ridge_pen
                 )
+
+mutable struct par_unc{SE, P, Z}
+    se::SE
+    p::P
+    z::Z
+    par_unc{SE, P, Z}(se, p, z) where {SE, P, Z} = new(se, p, z)
+end
