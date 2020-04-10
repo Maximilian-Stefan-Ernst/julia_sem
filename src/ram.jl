@@ -34,6 +34,18 @@ test(ForwardDiff.Dual(10))
 @benchmark test(ForwardDiff.Dual(10))
 @code_warntype test(ForwardDiff.Dual(10))
 
+n = 10
+s = zeros(n, n)
+f = zeros(n, n)
+a = zeros(n, n)
+m = zeros(n)
+
+test = Ram(s, f, a, m)
+
+A = test(ForwardDiff.Dual(10))
+
+convert(Type{Array{typeof(ForwardDiff.Dual(10))}}, [5.0 5.0]) 
+
 # test inplace assignment with BitArray
 
 bit = BitArray([0 0 0
