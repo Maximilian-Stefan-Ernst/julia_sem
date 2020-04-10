@@ -114,27 +114,29 @@ function(ram::Ram)(parameters)
     snfree = sum(ram.sfree)
     start = one(snfree)
     if snfree > zero(snfree)
-        s[ram.sfree] .= parameters[start:(start + snfree)]
+        s[ram.sfree] .= parameters[start:(start + snfree - one(snfree))]
         start = start + snfree
     end
 
     fnfree = sum(ram.ffree)
     if fnfree > zero(fnfree)
-        f[ram.ffree] .= parameters[start:(start + fnfree)]
+        f[ram.ffree] .= parameters[start:(start + fnfree - one(fnfree))]
         start = start + fnfree
     end
 
     anfree = sum(ram.afree)
     if anfree > zero(anfree)
-        a[ram.afree] .= parameters[start:(start + anfree)]
+        a[ram.afree] .= parameters[start:(start + anfree - one(anfree))]
         start = start + anfree
     end
 
     mnfree = sum(ram.mfree)
     if fnfree > zero(fnfree)
-        m[ram.mfree] .= parameters[start:(start + mnfree)]
+        m[ram.mfree] .= parameters[start:(start + mnfree - one(mnfree))]
     end
     return Ram(s, f, a, m, ram.sfree, ram.ffree, ram.afree, ram.mfree)
 end
 
-test(rand(Int, sumfree)//3)
+@benchmark test(rand(Int, sumfree)//3)
+# 1.23 ms for n = 100; 30100 elements
+# 18 μs for n = 10; 310
