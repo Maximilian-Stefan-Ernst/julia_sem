@@ -19,50 +19,30 @@ for i in 1:length(datas)
     end
 end
 
-@benchmark tr = ram(test.ram(test.par)[1],
-    test.ram(test.par)[2],
-    test.ram(test.par)[3])
 
-tr
+### model 1
+fake_ram = ram([1.0], [1.0], [1.0])
 
-@benchmark three_mean_func(tr, zeros(21))
-
-
-test = sem.model(model_funcs[1], datas[1], start_values[1])
-
-Optim.minimizer(fit(test))
+test = sem.model(fake_ram, model_funcs[1], datas[1], start_values[1])
 
 Optim.minimizer(fit(test))
 
 
 
 ### model 2
-
-
-test = sem.model(ram(three_mean_func(start_values)[1],
-                        three_mean_func(start_values)[2],
-                        three_mean_func(start_values)[3],),
+test = sem.model(fake_ram,
                 ramfunc,
                 datas[2],
                 start_values[2])
 
-test.ram(start_values[2])
+
 
 start_values[2]
 
-A =     [0  :α  0
-        :λ  0   9]
 
-typeof(A[2])
 
-ms = (test.ram(test.par))
 
-@benchmark sem.imp_cov(test.ram(test.par))
-
-invia = inv(I - test.ram(test.par)[3])
-
-@benchmark ms[2]*invia*ms[1]*transpose(invia)*transpose(ms[2])
-
+### testing space
 function imp_cov(D, A)
       invia = LinearAlgebra.inv(factorize((I - A)))
       #invia = convert(Array{Float64}, invia)::Array{Float64}
@@ -75,88 +55,7 @@ function func(invia, D)
       return imp
 end
 
-D = three_mean_func(start_values[2])
 
-
-
-@benchmark imp_cov(D, A)
-
-invia = LinearAlgebra.inv!(factorize(I - D[3]))
-
-A = convert(Array{ForwardDiff.Dual}, D[3])
-
-@benchmark LinearAlgebra.inv!(factorize(I-D[3]))
-
-A = test.ram(test.par)[1]
-B = test.ram(test.par)[2]
-C = test.ram(test.par)[3]
-
-D = [A, B, C]
-
-@benchmark imp_cov(D)
-
-@benchmark three_mean_func(start_values[2])
-
-mat[3]
-
-A = [0  0  0  0  0  0  0  0  0  1     0     0.0
-    0  0  0  0  0  0  0  0  0  0.5    0     0
-    0  0  0  0  0  0  0  0  0  0.5    0     0
-    0  0  0  0  0  0  0  0  0  0     1      0
-    0  0  0  0  0  0  0  0  0  0     0.5    0
-    0  0  0  0  0  0  0  0  0  0     0.5    0
-    0  0  0  0  0  0  0  0  0  0     0     1
-    0  0  0  0  0  0  0  0  0  0     0     0.5
-    0  0  0  0  0  0  0  0  0  0     0     0.5
-    0  0  0  0  0  0  0  0  0  0     0     0
-    0  0  0  0  0  0  0  0  0  0     0     0
-    0  0  0  0  0  0  0  0  0  0     0     0]
-
-@benchmark A[1,2] = 5
-
-function tf(A::Array{Float64, 2})
-    inv(I-A)
-end
-
-@benchmark tf(A)
-
-@benchmark begin
-    optimize(
-    par -> test.objective(par, test),
-    test.par,
-    test.optimizer,
-    autodiff = :forward,
-    Optim.Options())
-end
-
-par2 = Optim.minimizer(optimize(
-    par -> test.objective(par, test),
-    test.par,
-    test.optimizer,
-    autodiff = :forward,
-    Optim.Options(f_tol = 1e-8)
-    ))
-
-fit(test)
-
-par = Optim.minimizer(optimize(
-    par -> test.objective(par, test),
-    test.par,
-    test.optimizer,
-    autodiff = :forward,
-    Optim.Options(iterations = 2)))
-
-@benchmark optimize(
-    par -> test.objective(par, test),
-    test.par,
-    test.optimizer,
-    autodiff = :forward,
-    Optim.Options(f_tol = 1e-8)
-    )
-
-par2 = Optim.minimizer(fit(test))
-
-@code_lowered(test.objective(test.par, test))
 
 par = Feather.read("test/comparisons/three_mean_par.feather")
 
@@ -294,3 +193,8 @@ end
 foo(ones(5, 5), (0., 1.0),
         (ones(5,5), DiffEqBase.dualcache(zeros(5,5))))
 solve(prob, TRBDF2())
+
+
+A = rand(10, 10)
+
+par = zeros(3)

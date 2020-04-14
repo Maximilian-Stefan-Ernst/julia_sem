@@ -4,8 +4,9 @@ struct SemML <: SemObjective end
 function (objective::SemML)(parameters, model::model)
       obs_cov = model.obs.cov
       n_man = size(obs_cov, 1)
-      model.ramf(model.ram, parameters)
-      imp_cov = sem.imp_cov(model.ram)
+      matrices = model.ramf(parameters)
+      #model.ramf(model.ram, parameters)
+      imp_cov = sem.imp_cov(matrices)
       dt = det(imp_cov)
       if dt < 0.0
             return 100000.0

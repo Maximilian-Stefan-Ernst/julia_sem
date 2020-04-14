@@ -11,9 +11,15 @@ function logl_mean(exp_mean, exp_cov, data_matr)
       return likelihood
 end
 
-function imp_cov(ram::ram)
-      invia = inv(I - ram.A) # invers of I(dentity) minus A matrix
-      imp = ram.F*invia*ram.S*transpose(invia)*transpose(ram.F)
+#function imp_cov(ram::ram)
+#      invia = inv(I - ram.A) # invers of I(dentity) minus A matrix
+#      imp = ram.F*invia*ram.S*transpose(invia)*transpose(ram.F)
+#      return imp
+#end
+
+function imp_cov(matrices)
+      invia = inv(I - matrices[3]) # invers of I(dentity) minus A matrix
+      imp = matrices[2]*invia*matrices[1]*transpose(invia)*transpose(matrices[2])
       return imp
 end
 

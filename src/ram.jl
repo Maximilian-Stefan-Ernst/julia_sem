@@ -44,7 +44,7 @@ test = Ram(s, f, a, m)
 
 A = test(ForwardDiff.Dual(10))
 
-convert(Type{Array{typeof(ForwardDiff.Dual(10))}}, [5.0 5.0]) 
+convert(Type{Array{typeof(ForwardDiff.Dual(10))}}, [5.0 5.0])
 
 # test inplace assignment with BitArray
 
