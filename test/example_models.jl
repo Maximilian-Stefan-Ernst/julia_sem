@@ -2,6 +2,8 @@ using sem, Test, Feather, BenchmarkTools, Distributions, Optim
 # using Test, Feather, BenchmarkTools, Distributions, Optim
 ### Modelle
 one_fact_dat = Feather.read("test/comparisons/one_fact_dat.feather")
+one_fact_par = Feather.read("test/comparisons/one_fact_par.feather")
+
 function one_fact_func(x)#::Union{NTuple(3, Array{Float64}), NTuple(3, AbstractArray)}
     S = [x[1] 0 0 0
         0 x[2] 0 0
@@ -21,7 +23,9 @@ function one_fact_func(x)#::Union{NTuple(3, Array{Float64}), NTuple(3, AbstractA
 end
 
 three_mean_dat = Feather.read("test/comparisons/three_mean_dat.feather")
-function three_mean_func(x)::Array{Array{Float64,2},1}
+three_mean_par = Feather.read("test/comparisons/three_mean_par.feather")
+
+function three_mean_func(x)
     S =[x[1] 0 0 0 0 0 0 0 0 0 0 0.0
         0 x[2] 0 0 0 0 0 0 0 0 0 0
         0 0 x[3] 0 0 0 0 0 0 0 0 0
@@ -58,9 +62,9 @@ function three_mean_func(x)::Array{Array{Float64,2},1}
         0  0  0  0  0  0  0  0  0  0     0     0
         0  0  0  0  0  0  0  0  0  0     0     0]
 
-    #M = [x[22], x[23], x[24], x[25], x[26], x[27], x[28], x[29], x[30], 0, 0, 0]
+    M = [x[22], x[23], x[24], x[25], x[26], x[27], x[28], x[29], x[30], 0, 0, 0]
 
-    return [S, F, A]#, M)
+    return [S, F, A, M]
 end
 
 function ramfunc(ram::ram, par)
@@ -81,6 +85,8 @@ function ramfunc(ram::ram, par)
 end
 
 three_path_dat = Feather.read("test/comparisons/three_path_dat.feather")
+three_path_par = Feather.read("test/comparisons/three_path_par.feather")
+lav_start_par = Feather.read("test/comparisons/start_par.feather")
 
 function three_path_func(x)
 
@@ -126,7 +132,7 @@ function three_path_func(x)
       0  0  0  0  0  0  0  0  0  0  0     x[29] 0     0
       0  0  0  0  0  0  0  0  0  0  0     x[30] x[31] 0]
 
-    return (S, F, A)
+    return [S, F, A]
 end
 
 function growth_func(x)

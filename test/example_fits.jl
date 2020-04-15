@@ -1,12 +1,16 @@
 include("../test/example_models.jl");
 
+using BenchmarkTools, Test
+
 datas = (one_fact_dat, three_mean_dat, three_path_dat)
 model_funcs = (one_fact_func, three_mean_func, three_path_func)
 start_values = (
     vcat(fill(1, 4), fill(0.5, 2)),
-    vcat(fill(1, 9), fill(1, 3), fill(0.5, 3), fill(0.5, 6)),#, vec(mean(convert(Matrix{Float64}, three_mean_dat), dims = 1))),
-    vcat(fill(1, 14), fill(0.5, 17))
+    vcat(fill(1, 9), fill(1, 3), fill(0.5, 3), fill(0.5, 6), vec(mean(convert(Matrix{Float64}, three_mean_dat), dims = 1))),
+    vcat(fill(1.0, 11), fill(0.05, 3), fill(0.0, 6), fill(1.0, 8), fill(0, 3))
     )
+
+fake_ram = ram(rand(10,10), rand(10,10), rand(10,10))
 
 optimizers = (LBFGS(), GradientDescent(), Newton())
 
@@ -20,35 +24,71 @@ for i in 1:length(datas)
 end
 
 
+
 ### model 1
-fake_ram = ram([1.0], [1.0], [1.0])
 
 test = sem.model(fake_ram, model_funcs[1], datas[1], start_values[1])
 
-Optim.minimizer(fit(test))
+@benchmark fit(test)
 
+# compare parameters
+pars = Optim.minimizer(fit(test))
+par_order = [collect(4:7); collect(2:3)]
+
+@test all(abs.(pars .- one_fact_par.est[par_order]) .< 0.02)
 
 
 ### model 2
 test = sem.model(fake_ram,
-                ramfunc,
+                model_funcs[2],
                 datas[2],
                 start_values[2])
 
 
+@benchmark fit(test)
 
-start_values[2]
+pars = Optim.minimizer(fit(test))
+par_order = [collect(19:33); 2;3;5;6;8;9; collect(10:18)]
+
+@test all(abs.(pars .- three_mean_par.est[par_order]) .< 0.02)
+
+
+### model 3
+
+using LinearAlgebra
+
+test = sem.model(fake_ram,
+                model_funcs[3],
+                datas[3],
+                start_values[3])
+
+#start_values[3][collect(1:11)] .= diag(test.obs.cov)
+
+#start_values[3][collect(12:14)] .= 0.0
+
+#pars = Optim.minimizer(fit(test))
+
+par_order = [collect(21:34);  collect(15:20); 2;3; 5;6;7; collect(9:14)]
+
+@test all(abs.(pars .- three_path_par.est[par_order]) .< 0.02*abs.(pars))
 
 
 
+test.objective(three_path_par.est[par_order], test)
 
-### testing space
-function imp_cov(D, A)
-      invia = LinearAlgebra.inv(factorize((I - A)))
-      #invia = convert(Array{Float64}, invia)::Array{Float64}
-      imp = D[2]*invia*D[1]*transpose(invia)*transpose(D[2])
-      return imp
-end
+lav_start_par.est[par_order]
+
+using LineSearches
+
+optimize(
+    par -> test.objective(par, test),
+    lav_start_par.est[par_order],
+    LBFGS(),
+    autodiff = :forward,
+    Optim.Options(allow_f_increases = false#,
+                    #x_tol = 1e-4,
+                    #f_tol = 1e-4
+                    ))
 
 function func(invia, D)
       imp = D[2]*invia*D[1]*transpose(invia)*transpose(D[2])
@@ -60,19 +100,6 @@ end
 par = Feather.read("test/comparisons/three_mean_par.feather")
 
 test.objective(start_values[2], test)
-
-
-### model 3
-
-test = sem.model(model_funcs[3], datas[3], start_values[3];
-    optimizer = LBFGS(; ))
-
-fit(test)
-
-test.objective(test.par, test)
-
-sem.imp_cov(test.ram(start_values[3]))
-
 
 ### minimal working example
 using Optim, ForwardDiff
