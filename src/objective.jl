@@ -14,7 +14,7 @@ function (objective::SemML)(parameters, model::model)
       if dt < 0.0
             return 100000.0
       end
-      F_ML = -log(dt) + tr(obs_cov*inv(imp_cov)) + log(det(obs_cov)) - n_man
+      F_ML = log(dt) + tr(obs_cov*inv(imp_cov)) - log(det(obs_cov)) - n_man
       if size(matrices, 1) == 4
           mean_diff = model.obs.mean - sem.imp_mean(matrices)
           F_ML = F_ML + transpose(mean_diff)*inv(imp_cov)*mean_diff

@@ -155,3 +155,38 @@ mymod_lbfgs =
     mstruc = true)
 
 sem_fit!(mymod_lbfgs)
+
+A =[0  0  0  0  0  0  0  0  0  1     0     0.0
+    0  0  0  0  0  0  0  0  0  0.5     0     0
+    0  0  0  0  0  0  0  0  0  1.5     0     0
+    0  0  0  0  0  0  0  0  0  0     1     0
+    0  0  0  0  0  0  0  0  0  0     1.5      0
+    0  0  0  0  0  0  0  0  0  0     1.5      0
+    0  0  0  0  0  0  0  0  0  0     0     1
+    0  0  0  0  0  0  0  0  0  0     0     0.7
+    0  0  0  0  0  0  0  0  0  0     0     0.45
+    0  0  0  0  0  0  0  0  0  0     0     0
+    0  0  0  0  0  0  0  0  0  0     0     0
+    0  0  0  0.5  0  0  0  0  0  0     0     0]
+
+F = 5
+
+D = Array{Float64}(undef, 12, 12)
+
+@benchmark D = inv(I-A)
+
+@benchmark I + A + A^2 + A^3
+
+using LinearAlgebra
+
+three_mean_ram.A
+
+function imp_cov(ram::ram)
+    #invia = similar(ram.A)
+    invia = inv(I - ram.A)
+    #invia .= LinearAlgebra.inv!(factorize(I - ram.A))
+    ram.imp_cov = ram.F*invia*ram.S*transpose(invia)*transpose(ram.F)
+end
+
+
+@benchmark imp_cov(three_mean_ram)

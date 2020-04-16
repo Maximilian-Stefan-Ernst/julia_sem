@@ -5,8 +5,9 @@ using Distributions, Feather, ForwardDiff, LinearAlgebra, Optim, Random,
 
 include("model.jl")
 include("opt_wrapper.jl")
-include("objective.jl")
-include("helper.jl")
+#include("objective.jl")
+#include("helper.jl")
+include("fast_objective.jl")
 include("exported.jl")
 include("fit.jl")
 
