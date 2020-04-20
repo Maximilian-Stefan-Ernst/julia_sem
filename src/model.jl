@@ -20,6 +20,13 @@ mutable struct ram{T <: AbstractArray, N <: Union{AbstractArray, Nothing},
     names::V2
 end
 
+struct ram_int{T <: AbstractArray}
+    S::T
+    F::T
+    A::T
+    M::T
+end
+
 
 function ram(S, F, A, M, start_values, imp_cov)
     Ind_s = eltype.(S) .== Any

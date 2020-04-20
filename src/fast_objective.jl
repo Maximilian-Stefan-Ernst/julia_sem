@@ -22,6 +22,7 @@ function (objective::SemML)(parameters, model::model)
       #model.ramf(model.ram, parameters)
       imp_cov(model.ram)
       dt = det(model.ram.imp_cov)
+      print("iteration")
       if dt < 0.0
             return 100000.0
       end

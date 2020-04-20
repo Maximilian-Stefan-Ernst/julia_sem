@@ -47,10 +47,12 @@ par_order = [collect(19:33); 2;3;5;6;8;9; collect(10:18)]
 
 using LinearAlgebra
 
-test = sem.model(fake_ram,
-                model_funcs[3],
+three_path_ram = ram(S, F, A, nothing, start_val_path,
+    zeros(11,11))
+
+test = sem.model(three_path_ram,
                 datas[3],
-                start_values[3])
+                start_val_path)
 
 #start_values[3][collect(1:11)] .= diag(test.obs.cov)
 
@@ -62,7 +64,7 @@ par_order = [collect(21:34);  collect(15:20); 2;3; 5;6;7; collect(9:14)]
 
 @test all(abs.(pars .- three_path_par.est[par_order]) .< 0.02*abs.(pars))
 
-
+fit(test)
 
 test.objective(three_path_par.est[par_order], test)
 
