@@ -1,4 +1,4 @@
-using Random
+using Random, Optim
 
 abstract type SemObjective end
 
@@ -20,11 +20,11 @@ mutable struct ram{T <: AbstractArray, N <: Union{AbstractArray, Nothing},
     names::V2
 end
 
-struct ram_int{T <: AbstractArray}
+struct ram_int{T <: AbstractArray, N <: Union{AbstractArray, Nothing}}
     S::T
     F::T
     A::T
-    M::T
+    M::N
 end
 
 

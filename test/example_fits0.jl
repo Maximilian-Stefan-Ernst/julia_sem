@@ -35,13 +35,31 @@ test = sem.model(three_mean_ram,
 
 @benchmark fit(test)
 
-pars = Optim.minimizer(fit(test))''
+pars = Optim.minimizer(fit(test))
 par_order = [collect(19:33); 2;3;5;6;8;9; collect(10:18)]
 
 @test all(abs.(pars .- three_mean_par.est[par_order]) .< 0.02)
 
 @benchmark test.objective(convert(Array{ForwardDiff.Dual{Nothing, Float64, 0}}, test.par),
     test)
+
+test.ram = nothing
+
+function imp_cov(ram::ram)
+    #invia = similar(ram.A)
+    invia = inv(I - ram.A)
+    #invia .= LinearAlgebra.inv!(factorize(I - ram.A))
+    ram.imp_cov .= ram.F*invia*ram.S*transpose(invia)*transpose(ram.F)
+end
+
+
+imp_cov(three_mean_ram)
+
+@code_warntype test.objective(start_values[2], test)
+
+test
+
+@time test.ram(start_values[2])
 
 ### model 3
 
@@ -127,7 +145,11 @@ A =  [0.0 0 0 0 0 0 0 0
         0 0 0 0 0 0 0 0
         0 0 0 0 0 0 0 0]
 
-
+function MyStruct(A)
+    optimize(par -> wrap(par, teststruct),
+                [5.0],
+                LBFGS(),
+                autodiff = :forward)
 
 teststruct = MyStruct(A)
 
@@ -178,25 +200,22 @@ mutable struct MyStruct{T}
     a::T
 end
 
-A =  [0.0 0 0 0 0 0 0 0
-        0 0 0 0 0 0 0 0
-        0 0 0 0 0 0 0 0
-        0 0 0 0 0 0 0 0]
+A =  [0 0
+    0 3.0]
 
 teststruct = MyStruct(A)
 
-function wrap(par, A, matr)
-    matr = DiffEqBase.get_tmp(matr, A)
-    matr = one(eltype(par))*A
-    return matr
-    #matr[4,8] = par[1]
-    #return matr[4,8]^2
+function wrap(par, matr)
+    matr = DiffEqBase.get_tmp(matr, par)
+    matr[1,1] = par[1]
+    print(matr)
+    return matr[1,1]^2
 end
 
-@benchmark wrap(ForwardDiff.Dual(8.0), ones(5,5),
-                DiffEqBase.dualcache(zeros(5,5)))
+wrap([ForwardDiff.Dual(1)],
+    teststruct.a, DiffEqBase.dualcache(teststruct.a))
 
-optimize(par -> wrap(par, DiffEqBase.dualcache(teststruct.a)),
+optimize(par -> wrap(par, DiffEqBase.dualcache(A)),
             [5.0],
             LBFGS(),
             autodiff = :forward)
