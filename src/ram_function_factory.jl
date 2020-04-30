@@ -332,11 +332,11 @@ using SymEngine
 for i = 1:11 symbols("x_$i") end
 
 A =[0  0  0  0  0  0  0  0  0  0  0     1     0     0
-    0  0  0  0  0  0  0  0  0  0  0     x1   0     0
-    0  0  0  0  0  0  0  0  0  0  0     x2  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x21   0     0
+    0  0  0  0  0  0  0  0  0  0  0     x22  0     0
     0  0  0  0  0  0  0  0  0  0  0     0     1     0
-    0  0  0  0  0  0  0  0  0  0  0     0     x3  0
-    0  0  0  0  0  0  0  0  0  0  0     0     x4  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x23  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x24  0
     0  0  0  0  0  0  0  0  0  0  0     0     x5  0
     0  0  0  0  0  0  0  0  0  0  0     0     0     1
     0  0  0  0  0  0  0  0  0  0  0     0     0     x6
@@ -377,42 +377,109 @@ inv(A)
 
 Matrix(inv(SymEngine.CDenseMatrix(1.0I-A)))
 
-1.0I + A + A^2 + A^3
 
-f(A::Array{Basic, 2}) = A^4
-
-@benchmark f(A)
-
-A = [x1 x2
-    x3 x4]
-
-Matrix(inv(SymEngine.CDenseMatrix(A)))
-
-f1 = lambdify(A)
-
-y = [1.0 2 3 4]
-
-f1(y...)
-
-
-
-A = [x1 x2
-    x3 x4]
 
 
 compute1 = [x1+x2 x3*x2
             x1+x4 x1*5.0*x4]
 
-f2 = lambdify(compute1)
-
-f2(y...)
-
-@benchmark f2(y...)
-
-eval(Meta.parse("fm(x1, x2, x3, x4)="*SymEngine.toString(symf)))
-
-fm(y...)
-
-@benchmark fm(y...)
-
 SymEngine.toString.(compute1)
+
+parnames = Dict(
+    "x1" => "x[1]",
+    "x2" => "x[2]",
+    "x3" => "x[3]",
+    "x4" => "x[4]")
+
+implied = SymEngine.toString.(compute1)
+
+for i in 1:length(implied)
+    for j in 1:length(parnames)
+        implied[i] = reduce(replace, parnames, init = implied[i])
+    end
+end
+
+func = ""
+function merge_fun(func, implied)
+    for i = 1:length(implied)
+        func *= "pre[$i] = "*"$(implied[i]) ;"
+    end
+    return func
+end
+
+func = merge_fun(func, implied)
+
+eval(Meta.parse("function f(x, pre)"*func*"end"))
+
+myfunc = f
+
+function parse_func(implied, parnames)
+    implies = SymEngine.toString.(compute1)
+end
+
+A = rand(2,2)
+
+function test(x, pre)
+    f(x, pre)
+end
+
+@benchmark test([1.0 2 3 4], A)
+
+
+### MWE
+
+x = [1.0 2 3 4]
+
+compute = ["x[1]+x[2]" "x[3]*x[2]"
+            "x[1]+x[4]" "x[1]*5.0*x[4]"]
+
+#
+func_str = ""
+
+function merge_fun(func_str, implied)
+    for i = 1:length(implied)
+        func_str *= "pre[$i] = "*"$(implied[i]) ;"
+    end
+    return func_str
+end
+
+func_str = merge_fun(func, compute)
+
+eval(Meta.parse("function myfun(x, pre)"*func*"end"))
+
+# benchmark
+
+A = rand(2,2)
+
+@benchmark myfun(x, A)
+
+
+compute_expr = Meta.parse.(compute)
+
+compute_expr = Expr(Symbol(compute_expr))
+
+compute
+
+compute2 = "["
+
+function merge_fun2(compute, compute2)
+    for i in 1:size(compute, 1)
+        for j in 1:size(compute, 2)
+            compute2 *= " "*compute[i,j]
+        end
+        compute2 *=";"
+    end
+    return compute2
+end
+
+compute2 = merge_fun2(compute, compute2)
+
+compute2 = chop(compute2)*"]"
+
+compute_expr = Meta.parse(compute2)
+
+@generated function myfun2(x)
+    return compute_expr
+end
+
+@benchmark myfun2(x)
