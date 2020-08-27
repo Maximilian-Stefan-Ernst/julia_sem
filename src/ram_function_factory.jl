@@ -483,3 +483,267 @@ compute_expr = Meta.parse(compute2)
 end
 
 @benchmark myfun2(x)
+
+
+### ODE Solution
+using ModelingToolkit, BenchmarkTools
+
+@variables t σ[1:4,1:4](t)
+@derivatives D'~t
+eqs = Array{Equation}(undef,4,4)
+for i in 1:4
+    for j in 1:4
+        eqs[i,j] =  D(σ[i,j]) ~ 1 + σ[i,j]
+    end
+end
+
+sys = ODESystem(vec(eqs))
+f = ODEFunction(sys)
+
+u = rand(4,4)
+du = similar(u)
+@benchmark f(du,u,nothing,0.0)
+
+
+### simple test
+@variables x y z
+@variables x1 x2 x3 x4
+
+compute = [x1 + x2 x3*x2
+            x1 + x4 x1*5.0*x4]
+
+f1, f2 = eval.(ModelingToolkit.build_function(x*y, [x,y]))
+
+f1, f2 = eval.(ModelingToolkit.build_function(compute, [x1 x2 x3 x4]))
+
+A = Array{Float64}(undef, 2, 2)
+
+simplify_constants.(inv(compute))
+
+@benchmark f1([1.0 2 3 4])
+
+inv(compute)
+
+compute = [x1 + x2 x3*x2
+            x1 + x4 x1*5.0*x4]
+
+ModelingToolkit.build_function(compute, [x1 x2 x3 x4])
+
+@benchmark f2(A, [1.0 2 3 4])
+
+compute2 = :([x[1]+x[2] x[3]*x[2]
+            x[1]+x[4] x[1]*5.0*x[4]])
+
+@generated function f3(x)
+    return compute2
+end
+
+
+@benchmark f3([1.0 2 3 4])
+
+
+### test for big model
+using ModelingToolkit, BenchmarkTools, LinearAlgebra, SymbolicUtils
+
+@variables x[1:31]
+
+A =[0  0  0  0  0  0  0  0  0  0  0     1     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[21]   0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[22]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     0     1     0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[23]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[24]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[25]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     0     1
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[26]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[27]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[28]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[29]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[30] x[31]   0]
+
+
+
+const B = rand(100, 100)
+
+@benchmark det(B)
+
+S =[x[1]   0     0     0     0     0     0     0     0     0     0     0     0     0
+      0     x[2]   0     0     0     0     0     0     0     0     0     0     0     0
+      0     0     x[3]   0     0     0     0     0     0     0     0     0     0     0
+      0     0     0     x[4]   0     0     0     x[15]  0     0     0     0     0     0
+      0     0     0     0     x[5]   0     x[16]  0     x[17]  0     0     0     0     0
+      0     0     0     0     0     x[6]   0     0     0     x[18]  0     0     0     0
+      0     0     0     0     x[16]  0     x[7]   0     0     0     x[19]  0     0     0
+      0     0     0     x[15] 0      0     0     x[8]   0     0     0     0     0     0
+      0     0     0     0     x[17]  0     0     0     x[9]   0     x[20]  0     0     0
+      0     0     0     0     0     x[18]  0     0     0     x[10]  0     0     0     0
+      0     0     0     0     0     0     x[19]  0     x[20]  0     x[11]  0     0     0
+      0     0     0     0     0     0     0     0     0     0     0     x[12]  0     0
+      0     0     0     0     0     0     0     0     0     0     0     0     x[13]  0
+      0     0     0     0     0     0     0     0     0     0     0     0     0     x[14]]
+
+    F =[1 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 1 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 1 0 0 0 0 0 0 0 0 0 0 0
+        0 0 0 1 0 0 0 0 0 0 0 0 0 0
+        0 0 0 0 1 0 0 0 0 0 0 0 0 0
+        0 0 0 0 0 1 0 0 0 0 0 0 0 0
+        0 0 0 0 0 0 1 0 0 0 0 0 0 0
+        0 0 0 0 0 0 0 1 0 0 0 0 0 0
+        0 0 0 0 0 0 0 0 1 0 0 0 0 0
+        0 0 0 0 0 0 0 0 0 1 0 0 0 0
+        0 0 0 0 0 0 0 0 0 0 1 0 0 0]
+
+
+covmat = simplify_constants.(F*simplify_constants.(1.0I+A+A^2+A^3)*S*
+            permutedims(simplify_constants.(1.0I+A+A^2+A^3))*permutedims(F))
+
+test = simplify_constants.(A^4)
+
+
+f1, f2 = eval.(ModelingToolkit.build_function(covmat, x))
+
+ModelingToolkit.build_function(covmat, x)
+
+start = vcat(fill(1.0, 11), fill(0.05, 3), fill(0.0, 6), fill(1.0, 8), fill(0, 3))
+
+start = rand(31)
+
+preal = zeros(size(covmat))
+
+f2(preal, start)
+
+preal
+
+@benchmark f2(preal, start)
+
+function imp_cov(matrices)
+      invia = inv(I - matrices[3]) # invers of I(dentity) minus A matrix
+      imp = matrices[2]*invia*matrices[1]*transpose(invia)*transpose(matrices[2])
+      return imp
+end
+
+x = start
+
+
+A =[0  0  0  0  0  0  0  0  0  0  0     1     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[21]   0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[22]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     0     1     0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[23]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[24]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[25]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     0     1
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[26]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[27]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[28]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[29]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[30] x[31]   0]
+
+S =[x[1]   0     0     0     0     0     0     0     0     0     0     0     0     0
+      0     x[2]   0     0     0     0     0     0     0     0     0     0     0     0
+      0     0     x[3]   0     0     0     0     0     0     0     0     0     0     0
+      0     0     0     x[4]   0     0     0     x[15]  0     0     0     0     0     0
+      0     0     0     0     x[5]   0     x[16]  0     x[17]  0     0     0     0     0
+      0     0     0     0     0     x[6]   0     0     0     x[18]  0     0     0     0
+      0     0     0     0     x[16]  0     x[7]   0     0     0     x[19]  0     0     0
+      0     0     0     x[15] 0      0     0     x[8]   0     0     0     0     0     0
+      0     0     0     0     x[17]  0     0     0     x[9]   0     x[20]  0     0     0
+      0     0     0     0     0     x[18]  0     0     0     x[10]  0     0     0     0
+      0     0     0     0     0     0     x[19]  0     x[20]  0     x[11]  0     0     0
+      0     0     0     0     0     0     0     0     0     0     0     x[12]  0     0
+      0     0     0     0     0     0     0     0     0     0     0     0     x[13]  0
+      0     0     0     0     0     0     0     0     0     0     0     0     0     x[14]]
+
+test = imp_cov((S, F, A))
+
+@benchmark test = imp_cov((S, F, A))
+
+preal = zeros(size(covmat))
+
+@benchmark f2(preal, start)
+
+preal
+
+### MWEs
+
+using ModelingToolkit, SymbolicUtils, LinearAlgebra
+
+@variables x[1:11]
+
+A =[0  0  0  0  0  0  0  0  0  0  0     1     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[1]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[2]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     0     1     0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[3]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[4]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     x[5]  0
+    0  0  0  0  0  0  0  0  0  0  0     0     0     1
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[6]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[7]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x[8]
+    0  0  0  0  0  0  0  0  0  0  0     0     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[9]  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x[10] x[11] 0]
+
+
+inv(1.0I-A)
+
+A^3
+
+@syms x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11
+
+A =[0  0  0  0  0  0  0  0  0  0  0     1    0     0
+    0  0  0  0  0  0  0  0  0  0  0     x1   0      0
+    0  0  0  0  0  0  0  0  0  0  0     x2   0      0
+    0  0  0  0  0  0  0  0  0  0  0     0     1    0
+    0  0  0  0  0  0  0  0  0  0  0     0     x3   0
+    0  0  0  0  0  0  0  0  0  0  0     0     x4   0
+    0  0  0  0  0  0  0  0  0  0  0     0     x5   0
+    0  0  0  0  0  0  0  0  0  0  0     0     0     1
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x6
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x7
+    0  0  0  0  0  0  0  0  0  0  0     0     0     x8
+    0  0  0  0  0  0  0  0  0  0  0     0     0     0
+    0  0  0  0  0  0  0  0  0  0  0     x9  0     0
+    0  0  0  0  0  0  0  0  0  0  0     x10 x11 0]
+
+A^4
+
+inv(1.0I-A)
+
+A = [x1 x2
+    x3 x4]
+
+inv(A)
+
+function f(x)
+    for i = 1:10^8
+        x = i
+    end
+    return(x)
+end
+
+f(x)
+
+@benchmark f(x)
+
+
+A = [0.5 0.5 0
+    0.5 -0.5 0
+    0 1 1]
+
+inv(A)
+
+a = 0
+
+function f(a)
+    for i in 1:552
+        a = a + 552/(553 - i)
+    end
+    return a
+end
+
+f(a)
